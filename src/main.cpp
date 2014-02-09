@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
   QApplication App(argc, argv);
   App.setOrganizationName("PLab");
   App.setOrganizationDomain("labedan.fr");
-  App.setApplicationName("BioTool1");
+  App.setApplicationName("BioTool2");
 
   QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
   QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));

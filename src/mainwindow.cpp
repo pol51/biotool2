@@ -197,6 +197,7 @@ void MainWindow::doOpen()
     {
       fileName = Filename;
       ui->imageView->data().load(fileName);
+      imageHeight->setText(QString::number(ui->imageView->imageRealHeight()));
     }
   }
 }

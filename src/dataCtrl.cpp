@@ -55,6 +55,7 @@ void DataCtrl::save(const QString &filename)
   Doc.appendChild(Root);
 
   QDomElement Points = Doc.createElement("points");
+  Points.setAttribute("imageRealWidth", _imageRealWidth);
   Root.appendChild(Points);
   foreach(const Point &_point, points) _point.save(Doc, Points);
 
@@ -124,6 +125,11 @@ void DataCtrl::load(const QString &filename)
   {
     if (Element.tagName() == "points")
     {
+      bool ImageRealWidthOk;
+      qreal ImageRealWidth = Element.attribute("imageRealWidth").toDouble(&ImageRealWidthOk);
+      if (ImageRealWidthOk)
+        _imageRealWidth = ImageRealWidth;
+
       QDomElement PointElement = Element.firstChildElement("point");
       while (!PointElement.isNull())
       {
