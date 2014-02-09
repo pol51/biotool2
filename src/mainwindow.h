@@ -6,8 +6,7 @@
 namespace Ui { class MainWindow; }
 
 class QLabel;
-
-class SettingsView;
+class QLineEdit;
 
 class MainWindow : public QMainWindow
 {
@@ -31,14 +30,12 @@ class MainWindow : public QMainWindow
     void doSave();
     void doSaveAs();
     void doOpen();
-    void doCellCountChanged(int intervalIgnored, int csdIgnored, int total);
-    void doAngleVPatchChanged(int angle);
-    void doAngleVBeatingChanged(int angle);
+    void doCellCountChanged(int total);
     void doExport();
-    void doAdvancedExport();
-    void doSettings();
     void doAbout();
-    void displayCellMenu(const QPoint& pos);
+
+    void setImageWidth();
+    void setImageHeight();
 
   protected:
     QString getDefaultFilename();
@@ -46,11 +43,12 @@ class MainWindow : public QMainWindow
   private:
     Ui::MainWindow *ui;
     QLabel  *cellsLabel;
-    QLabel  *angleVPatchLabel;
-    QLabel  *angleVBeatingLabel;
+    QAction *lastModeAction;
+    QLineEdit *imageWidth;
+    QLineEdit *imageHeight;
+
     QString fileName;
     QString imageName;
-    QAction *lastModeAction;
 };
 
 #endif

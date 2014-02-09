@@ -25,7 +25,7 @@ void ImageView::mousePressEvent(QMouseEvent *event)
     onMoveDecal = (event->type() == QEvent::MouseButtonPress && CurrentMode == DataCtrl::eModeView);
     lastMousePos = event->pos();
 
-    if ((1<<CurrentMode) & ((1<<DataCtrl::eModeEdit) | (1<<DataCtrl::eModeDefineCentroid)))
+    if (CurrentMode == DataCtrl::eModeEdit)
     {
       const float factor = qMin(width(), height());
       float x(zoom / 10.);
@@ -80,20 +80,8 @@ void ImageView::wheelEvent(QWheelEvent *event)
 
 void ImageView::keyPressEvent(QKeyEvent *event)
 {
-  switch (event->key())
-  {
-    case Qt::Key_Backspace:
-      if (event->modifiers() & Qt::ControlModifier)
-        dataCtrl->removeLastForm();
-      else
-        dataCtrl->removeLastPoint();
-      break;
-    case Qt::Key_Space:
-      dataCtrl->finalizeForm();
-      break;
-    default:
-      break;
-  }
+  if (event->key() == Qt::Key_Backspace && dataCtrl->currentMode() == DataCtrl::eModeEdit)
+    dataCtrl->removeLastPoint();
 
   QGLWidget::keyPressEvent(event);
 }

@@ -2,12 +2,12 @@
 #include "ui_mainwindow.h"
 
 #include "dataCtrl.h"
-#include "settingsView.h"
-#include "csvExportOptions.h"
 
 #include <QtGui/QFileDialog>
 #include <QtGui/QMessageBox>
 #include <QtGui/QLabel>
+#include <QtGui/QLineEdit>
+#include <QtGui/QDoubleValidator>
 
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
@@ -21,53 +21,58 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->actCloseImage, SIGNAL(triggered()), ui->imageView, SLOT(doCloseImage()));
   connect(ui->actModeEdit, SIGNAL(triggered(bool)), this, SLOT(doChangeMode(bool)));
   connect(ui->actModeView, SIGNAL(triggered(bool)), this, SLOT(doChangeMode(bool)));
-  connect(ui->actModeDefineCentroid, SIGNAL(triggered(bool)), this, SLOT(doChangeMode(bool)));
   connect(ui->actResetView, SIGNAL(triggered()), ui->imageView, SLOT(doResetView()));
   connect(ui->actNew, SIGNAL(triggered()), this, SLOT(doNew()));
   connect(ui->actSave, SIGNAL(triggered()), this, SLOT(doSave()));
   connect(ui->actSaveAs, SIGNAL(triggered()), this, SLOT(doSaveAs()));
   connect(ui->actOpen, SIGNAL(triggered()), this, SLOT(doOpen()));
-  connect(&ui->imageView->data(), SIGNAL(countChanged(int, int, int)), this, SLOT(doCellCountChanged(int, int, int)));
-  connect(&ui->imageView->data(), SIGNAL(angleVPatchChanged(int)), this, SLOT(doAngleVPatchChanged(int)));
-  connect(&ui->imageView->data(), SIGNAL(angleVBeatingChanged(int)), this, SLOT(doAngleVBeatingChanged(int)));
+  connect(&ui->imageView->data(), SIGNAL(countChanged(int)), this, SLOT(doCellCountChanged(int)));
   connect(ui->actExport, SIGNAL(triggered()), this, SLOT(doExport()));
-  connect(ui->actExportOption, SIGNAL(triggered()), this, SLOT(doAdvancedExport()));
-  connect(ui->actSettings, SIGNAL(triggered()), this, SLOT(doSettings()));
   connect(ui->actAbout, SIGNAL(triggered()), this, SLOT(doAbout()));
-  connect(ui->objectsView, SIGNAL(entered(QModelIndex)), &ui->imageView->data(), SLOT(setSelection(QModelIndex)));
-  connect(ui->objectsView, SIGNAL(pressed(QModelIndex)), &ui->imageView->data(), SLOT(setSelection(QModelIndex)));
-  connect(ui->objectsView, SIGNAL(clicked(QModelIndex)), &ui->imageView->data(), SLOT(setSelection(QModelIndex)));
-  connect(ui->objectsView, SIGNAL(activated(QModelIndex)), &ui->imageView->data(), SLOT(setSelection(QModelIndex)));
-  connect(ui->objectsView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(displayCellMenu(QPoint)));
 
   ui->actModeView->blockSignals(true);
   ui->actModeView->trigger();
   ui->actModeView->blockSignals(false);
   lastModeAction = ui->actModeView;
 
-  ui->objectsView->setModel(&ui->imageView->data());
-  ui->objectsView->setContextMenuPolicy(Qt::CustomContextMenu);
-
-  cellsLabel = new QLabel(" [000000 cells] ");
+  cellsLabel = new QLabel("");
   cellsLabel->setAlignment(Qt::AlignLeft);
   cellsLabel->setMinimumSize(cellsLabel->sizeHint());
-  doCellCountChanged(0, 0, 0);
-
-  angleVPatchLabel = new QLabel(" vPatch[-000 deg] ");
-  angleVPatchLabel->setAlignment(Qt::AlignLeft);
-  angleVPatchLabel->setMinimumSize(angleVPatchLabel->sizeHint());
-  angleVPatchLabel->setVisible(false);
-  doAngleVPatchChanged(0);
-
-  angleVBeatingLabel = new QLabel(" vBeating[-000 deg] ");
-  angleVBeatingLabel->setAlignment(Qt::AlignLeft);
-  angleVBeatingLabel->setMinimumSize(angleVBeatingLabel->sizeHint());
-  angleVBeatingLabel->setVisible(false);
-  doAngleVBeatingChanged(0);
-
+  doCellCountChanged(0);
   statusBar()->addWidget(cellsLabel);
-  statusBar()->addWidget(angleVPatchLabel);
-  statusBar()->addWidget(angleVBeatingLabel);
+
+  QDoubleValidator *HeightValidator = new QDoubleValidator(ui->toolBar);
+  HeightValidator->setDecimals(3);
+  HeightValidator->setBottom(0.);
+  QDoubleValidator *WidthValidator = new QDoubleValidator(ui->toolBar);
+  WidthValidator->setDecimals(3);
+  WidthValidator->setBottom(0.);
+
+  ui->toolBar->addWidget(new QLabel("width:", ui->toolBar));
+  imageWidth = new QLineEdit(ui->toolBar);
+  imageWidth->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+  imageWidth->setValidator(WidthValidator);
+  ui->toolBar->addWidget(imageWidth);
+  ui->toolBar->addSeparator();
+
+  ui->toolBar->addWidget(new QLabel("height:", ui->toolBar));
+  imageHeight = new QLineEdit(ui->toolBar);
+  imageHeight->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+  imageHeight->setValidator(HeightValidator);
+  ui->toolBar->addWidget(imageHeight);
+
+  QLabel *Spacer = new QLabel("", ui->toolBar);
+  Spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+  ui->toolBar->addWidget(Spacer);
+
+  connect(imageHeight,  SIGNAL(editingFinished()), this, SLOT(setImageHeight()));
+  connect(imageWidth,   SIGNAL(editingFinished()), this, SLOT(setImageWidth()));
+  connect(imageHeight,  SIGNAL(textChanged(QString)), this, SLOT(setImageHeight()));
+  connect(imageWidth,   SIGNAL(textChanged(QString)), this, SLOT(setImageWidth()));
+
+  imageWidth->setText(QString::number(1.));
+  setImageWidth();
+  ui->imageView->setFocus();
 }
 
 MainWindow::~MainWindow()
@@ -100,35 +105,32 @@ bool MainWindow::askForUnsavedChanges(const QString &title)
 
 void MainWindow::doLoadImage()
 {
-  ui->imageView->releaseKeyboard();
-
-  imageName = QString();
-
-  QString filename(QFileDialog::getOpenFileName(this, tr("Choisir une image"), tr("."), tr("Images (*.png *.jpg *.jpeg *.tif *.tiff);;Tous (*)")));
-  if (filename.isEmpty()) return;
-  if (!QFileInfo(filename).isReadable())
+  imageName.clear();
+  QString Filename(QFileDialog::getOpenFileName(this, tr("Choisir une image"), tr("."), tr("Images (*.png *.jpg *.jpeg *.tif *.tiff);;Tous (*)")));
+  if (Filename.isEmpty()) return;
+  if (!QFileInfo(Filename).isReadable())
   {
     QMessageBox::warning(this, tr("Erreur"), tr("Impossible de lire le fichier."));
-    ui->imageView->grabKeyboard();
     return;
   }
-  QImage Image(filename);
+  QImage Image(Filename);
   if (Image.isNull())
   {
     QMessageBox::warning(this, tr("Erreur"), tr("Format d'image incorrect."));
-    ui->imageView->grabKeyboard();
     return;
   }
 
-  imageName = QFileInfo(filename).baseName();
+  imageName = QFileInfo(Filename).baseName();
 
   emit onLoadWorkImage(Image);
-  ui->imageView->grabKeyboard();
+
+  imageWidth->setText(QString::number(1.));
+  setImageWidth();
+  ui->imageView->setFocus();
 }
 
 void MainWindow::doChangeMode(bool activated)
 {
-
   QAction *action = (QAction*)sender();
   if (activated)
   {
@@ -142,8 +144,6 @@ void MainWindow::doChangeMode(bool activated)
       ui->imageView->changeMode(DataCtrl::eModeView);
     if (action == ui->actModeEdit)
       ui->imageView->changeMode(DataCtrl::eModeEdit);
-    if (action == ui->actModeDefineCentroid)
-      ui->imageView->changeMode(DataCtrl::eModeDefineCentroid);
     lastModeAction = action;
   }
   else
@@ -173,92 +173,52 @@ void MainWindow::doSave()
 
 void MainWindow::doSaveAs()
 {
-  ui->imageView->releaseKeyboard();
-
   QFileDialog FileDialog(this, tr("Enregistrer sous"), tr("."), tr("Documents (*.xml);;Tous (*)"));
   FileDialog.setAcceptMode(QFileDialog::AcceptSave);
   FileDialog.setFileMode(QFileDialog::AnyFile);
   FileDialog.selectFile(getDefaultFilename().append(".xml"));
   if (FileDialog.exec() == QDialog::Accepted)
   {
-    const QString filename(FileDialog.selectedFiles().at(0));
-    if (!filename.isEmpty())
+    const QString Filename(FileDialog.selectedFiles().at(0));
+    if (!Filename.isEmpty())
     {
-      fileName = filename;
+      fileName = Filename;
       doSave();
     }
   }
-
-  ui->imageView->grabKeyboard();
 }
 
 void MainWindow::doOpen()
 {
-  ui->imageView->releaseKeyboard();
-
   if (askForUnsavedChanges(tr("Ouvrir un document")))
   {
-    const QString filename(QFileDialog::getOpenFileName(this, tr("Ouvrir un document"), tr("."), tr("Documents (*.xml);;Tous (*)")));
-    if (!filename.isEmpty())
+    const QString Filename(QFileDialog::getOpenFileName(this, tr("Ouvrir un document"), tr("."), tr("Documents (*.xml);;Tous (*)")));
+    if (!Filename.isEmpty())
     {
-      fileName = filename;
+      fileName = Filename;
       ui->imageView->data().load(fileName);
     }
   }
-
-  ui->imageView->grabKeyboard();
 }
 
-void MainWindow::doCellCountChanged(int intervalIgnored, int csdIgnored, int count)
+void MainWindow::doCellCountChanged(int count)
 {
-  cellsLabel->setText(QString(" [%1/%2 cell%3] [!csd: %4%]").
-                      arg(count - intervalIgnored).arg(count).arg(count?"s":"").arg(count?((count - (qreal)csdIgnored) / count * 100.):0));
-}
-
-void MainWindow::doAngleVPatchChanged(int angle)
-{
-  angleVPatchLabel->setText(QString(" vPatch[%1 deg] ").arg(angle));
-}
-
-void MainWindow::doAngleVBeatingChanged(int angle)
-{
-  angleVBeatingLabel->setText(QString(" vBeating[%1 deg] ").arg(angle));
+  cellsLabel->setText(QString("%1 point%2").arg(count).arg(count>1?"s":""));
 }
 
 void MainWindow::doExport()
 {
-  ui->imageView->releaseKeyboard();
-
   QFileDialog FileDialog(this, tr("Exporter sous"), tr("."), tr("Fichiers csv (*.csv)"));
   FileDialog.setAcceptMode(QFileDialog::AcceptSave);
   FileDialog.setFileMode(QFileDialog::AnyFile);
-  FileDialog.selectFile(getDefaultFilename().append(ui->imageView->data().getCsvSuffix()).append(QString("-CsdMax%1").arg(DataCtrl::maxCSD())).append(".csv"));
+  FileDialog.selectFile(getDefaultFilename().append(".csv"));
   if (FileDialog.exec() == QDialog::Accepted)
   {
-    const QString filename(FileDialog.selectedFiles().at(0));
-    if (!filename.isEmpty())
-      ui->imageView->data().exportCsv(filename);
+    const QString Filename(FileDialog.selectedFiles().at(0));
+
+    if (!Filename.isEmpty())
+      ui->imageView->data().exportCsv(Filename);
   }
-
-  ui->imageView->grabKeyboard();
-}
-
-void MainWindow::doAdvancedExport()
-{
-  ui->imageView->releaseKeyboard();
-
-  CsvExportOptions CsvExportDialog(this);
-  if (CsvExportDialog.exec() == QDialog::Accepted)
-    doExport();
-
-  ui->imageView->grabKeyboard();
-}
-
-void MainWindow::doSettings()
-{
-  SettingsView Settings(this);
-  connect(&Settings, SIGNAL(maximalCSD(const int&)), &ui->imageView->data(), SLOT(setMaximalCSD(const int&)));
-  Settings.exec();
 }
 
 void MainWindow::doAbout()
@@ -270,21 +230,7 @@ void MainWindow::doAbout()
   #define _STR(var)   #var
   #define GIT_VERSION _XSTR(BT1_GIT_VERSION)
 
-  QMessageBox::information(this, tr("A Propos"), tr("Biotool1\nversion 1-%1").arg(GIT_VERSION));
-}
-
-void MainWindow::displayCellMenu(const QPoint &pos)
-{
-  if (Cell::selected())
-  {
-    QMenu Menu(ui->objectsView);
-    Menu.addAction(tr("Supprimer"), &ui->imageView->data(), SLOT(removeSelectedForm()));
-    if (!Cell::edited() || Cell::edited() != Cell::selected())
-      Menu.addAction(tr("Commencer édition"),    &ui->imageView->data(), SLOT(startEditSelectedForm()));
-    else
-      Menu.addAction(tr("Arrêter édition"),    &ui->imageView->data(), SLOT(stopEditSelectedForm()));
-    Menu.exec(ui->objectsView->mapToGlobal(pos));
-  }
+  QMessageBox::information(this, tr("A Propos"), tr("Biotool2\nversion 1-%1").arg(GIT_VERSION));
 }
 
 QString MainWindow::getDefaultFilename()
@@ -292,4 +238,20 @@ QString MainWindow::getDefaultFilename()
   if (fileName.isEmpty())
     return imageName;
   return QFileInfo(fileName).baseName();
+}
+
+void MainWindow::setImageWidth()
+{
+  imageHeight->blockSignals(true);
+  ui->imageView->setImageRealWidth(imageWidth->text().toDouble());
+  imageHeight->setText(QString::number(ui->imageView->imageRealHeight()));
+  imageHeight->blockSignals(false);
+}
+
+void MainWindow::setImageHeight()
+{
+  imageWidth->blockSignals(true);
+  ui->imageView->setImageRealHeight(imageHeight->text().toDouble());
+  imageWidth->setText(QString::number(ui->imageView->imageRealWidth()));
+  imageWidth->blockSignals(false);
 }

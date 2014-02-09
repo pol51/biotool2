@@ -16,9 +16,14 @@ class ImageView : public QGLWidget
     ~ImageView();
 
     void changeMode(DataCtrl::EMode mode) { dataCtrl->setCurrentMode(mode); onMoveDecal = false; }
+    void setImageRealWidth(const qreal &width) { dataCtrl->setImageRealWidth(width / ratioWidthPerHeght); }
+    void setImageRealHeight(const qreal &height) { dataCtrl->setImageRealWidth(height); }
 
     DataCtrl& data() { return *dataCtrl; }
     const DataCtrl& data() const { return *dataCtrl; }
+
+    qreal imageRealWidth()  const { return dataCtrl->imageRealWidth() * ratioWidthPerHeght; }
+    qreal imageRealHeight() const { return dataCtrl->imageRealWidth(); }
 
   public slots:
     void doZoomIn()     { if (zoom > 1) --zoom; }
@@ -46,7 +51,7 @@ class ImageView : public QGLWidget
     DataCtrl *dataCtrl;
     GLuint imageTexId;
     GLfloat xDecal, yDecal;
-    GLfloat ratioWidthPerHeght;
+    qreal ratioWidthPerHeght;
     QTimer refreshTimer;
     QPoint lastMousePos;
 };

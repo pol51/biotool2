@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Bio Tool 1</string>
+   <string>Bio Tool 2</string>
   </property>
   <widget class="QWidget" name="mainWidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -26,7 +26,7 @@
      <x>0</x>
      <y>0</y>
      <width>881</width>
-     <height>21</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFichier">
@@ -38,7 +38,6 @@
     <addaction name="actSave"/>
     <addaction name="actSaveAs"/>
     <addaction name="actExport"/>
-    <addaction name="actExportOption"/>
     <addaction name="separator"/>
     <addaction name="actLoadImage"/>
     <addaction name="actCloseImage"/>
@@ -53,9 +52,6 @@
     <addaction name="separator"/>
     <addaction name="actModeView"/>
     <addaction name="actModeEdit"/>
-    <addaction name="actModeDefineCentroid"/>
-    <addaction name="separator"/>
-    <addaction name="actSettings"/>
    </widget>
    <widget class="QMenu" name="menu_Aide">
     <property name="title">
@@ -90,27 +86,7 @@
    <addaction name="separator"/>
    <addaction name="actModeView"/>
    <addaction name="actModeEdit"/>
-   <addaction name="actModeDefineCentroid"/>
    <addaction name="separator"/>
-   <addaction name="actSettings"/>
-  </widget>
-  <widget class="QDockWidget" name="dockWidget">
-   <property name="allowedAreas">
-    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
-   </property>
-   <property name="windowTitle">
-    <string>Objets</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents">
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <widget class="QTreeView" name="objectsView"/>
-     </item>
-    </layout>
-   </widget>
   </widget>
   <action name="actLoadImage">
    <property name="icon">
@@ -265,45 +241,9 @@
     <bool>true</bool>
    </property>
   </action>
-  <action name="actSettings">
-   <property name="icon">
-    <iconset resource="../res/icons.qrc">
-     <normaloff>:/icons/settings</normaloff>:/icons/settings</iconset>
-   </property>
-   <property name="text">
-    <string>Réglages</string>
-   </property>
-   <property name="iconVisibleInMenu">
-    <bool>true</bool>
-   </property>
-  </action>
-  <action name="actModeDefineCentroid">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../res/icons.qrc">
-     <normaloff>:/icons/mesure</normaloff>:/icons/mesure</iconset>
-   </property>
-   <property name="text">
-    <string>Mode Definition &amp;Centroïde</string>
-   </property>
-  </action>
   <action name="actAbout">
    <property name="text">
     <string>A &amp;Propos</string>
-   </property>
-  </action>
-  <action name="actExportOption">
-   <property name="icon">
-    <iconset resource="../res/icons.qrc">
-     <normaloff>:/icons/export</normaloff>:/icons/export</iconset>
-   </property>
-   <property name="text">
-    <string>Exporter ...</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+E</string>
    </property>
   </action>
  </widget>
