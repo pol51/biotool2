@@ -1,7 +1,7 @@
 TARGET = biotool2
 TEMPLATE = app
 
-QT += opengl xml
+QT += opengl xml widgets
 
 GIT_VERSION = $$system(git rev-parse --short HEAD)
 DEFINES += BT1_GIT_VERSION=$$GIT_VERSION

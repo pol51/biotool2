@@ -3,10 +3,11 @@
 
 #include "dataCtrl.h"
 
-#include <QtGui/QFileDialog>
-#include <QtGui/QMessageBox>
-#include <QtGui/QLabel>
-#include <QtGui/QLineEdit>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
+
 #include <QtGui/QDoubleValidator>
 
 MainWindow::MainWindow(QWidget *parent) :
